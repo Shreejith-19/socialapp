@@ -1,0 +1,45 @@
+spring:
+  profiles:
+    active: prod
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/socialapp}
+    username: ${DATABASE_USER:sociapp_user}
+    password: ${DATABASE_PASSWORD:password}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      connection-timeout: 30000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 30
+        order_inserts: true
+        order_updates: true
+
+logging:
+  level:
+    root: WARN
+    com.example.socialapp: INFO
+  file:
+    name: logs/socialapp.log
+    max-size: 10MB
+    max-history: 30
+
+server:
+  port: ${SERVER_PORT:8080}
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${KEY_STORE_PATH:}
+    key-store-password: ${KEY_STORE_PASSWORD:}
+    key-store-type: PKCS12
+
+jwt:
+  secret: ${JWT_SECRET:must-be-changed-in-production}
+  expiration: ${JWT_EXPIRATION:86400000}

@@ -1,0 +1,48 @@
+{
+	"folders": [
+		{
+			"path": ".",
+			"name": "socialapp-backend"
+		},
+		{
+			"path": "frontend-javafx",
+			"name": "socialapp-frontend-javafx"
+		}
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "automatic",
+		"java.import.maven.enabled": true,
+		"java.import.gradle.enabled": false,
+		"java.project.referencedLibraries": {
+			"include": ["**/target/classes", "**/target/dependency/*.jar"],
+			"exclude": ["**/target/dependency/*-sources.jar", "**/node_modules/**"]
+		},
+		"maven.executable.path": "mvn",
+		"[java]": {
+			"editor.formatOnSave": false,
+			"editor.defaultFormatter": "redhat.java"
+		},
+		"files.exclude": {
+			"**/.classpath": false,
+			"**/.project": false,
+			"**/.settings": false
+		}
+	},
+	"[socialapp-backend]": {
+		"java.project.sourcePaths": ["src/main/java"],
+		"java.project.outputPath": "target/classes"
+	},
+	"[socialapp-frontend-javafx]": {
+		"java.project.sourcePaths": ["src/main/java"],
+		"java.project.outputPath": "target/classes"
+	},
+	"extensions": {
+		"recommendations": [
+			"redhat.java",
+			"vscjava.vscode-spring-boot-dashboard",
+			"vmware.vscode-spring-boot",
+			"vscjava.vscode-maven",
+			"vscjava.vscode-lombok"
+		]
+	}
+}
