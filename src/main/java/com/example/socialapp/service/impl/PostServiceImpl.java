@@ -4,6 +4,7 @@ import com.example.socialapp.dto.PostDTO;
 import com.example.socialapp.entity.Ban;
 import com.example.socialapp.entity.Post;
 import com.example.socialapp.entity.User;
+import com.example.socialapp.enums.NotificationType;
 import com.example.socialapp.enums.PostStatus;
 import com.example.socialapp.exception.BannedUserException;
 import com.example.socialapp.exception.ResourceNotFoundException;
@@ -11,6 +12,7 @@ import com.example.socialapp.repository.BanRepository;
 import com.example.socialapp.repository.PostRepository;
 import com.example.socialapp.repository.UserRepository;
 import com.example.socialapp.service.ModerationService;
+import com.example.socialapp.service.NotificationService;
 import com.example.socialapp.service.PostService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,15 +34,18 @@ public class PostServiceImpl implements PostService {
     private final UserRepository userRepository;
     private final ModerationService moderationService;
     private final BanRepository banRepository;
+    private final NotificationService notificationService;
 
     public PostServiceImpl(PostRepository postRepository, 
                          UserRepository userRepository,
                          ModerationService moderationService,
-                         BanRepository banRepository) {
+                         BanRepository banRepository,
+                         NotificationService notificationService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.moderationService = moderationService;
         this.banRepository = banRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -100,6 +105,21 @@ public class PostServiceImpl implements PostService {
 
         Post savedPost = postRepository.save(post);
         log.info("Post created successfully: {} with status: {}", savedPost.getId(), savedPost.getStatus());
+
+        // Send notifications based on post status
+        if (isContentSafe) {
+            // Notify user that post was published
+            notificationService.createNotification(author,
+                "Your post has been published and is now visible to other users.",
+                NotificationType.POST_PUBLISHED);
+            log.info("POST_PUBLISHED notification sent to author: {}", authorId);
+        } else {
+            // Notify user that post was flagged for review
+            notificationService.createNotification(author,
+                "Your post has been flagged for moderation review and is currently hidden.",
+                NotificationType.POST_FLAGGED);
+            log.info("POST_FLAGGED notification sent to author: {}", authorId);
+        }
 
         // Step 5: If flagged, send to moderation queue
         if (!isContentSafe) {

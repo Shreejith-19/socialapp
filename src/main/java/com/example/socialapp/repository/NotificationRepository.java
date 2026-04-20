@@ -47,6 +47,11 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     List<Notification> findByUserIdAndIsReadFalse(UUID userId);
 
     /**
+     * Find unread notifications sorted by creation date (newest first).
+     */
+    List<Notification> findByUserIdAndIsReadFalseOrderByCreatedAtDesc(UUID userId);
+
+    /**
      * Find unread notifications with pagination.
      */
     Page<Notification> findByUserIdAndIsReadFalse(UUID userId, Pageable pageable);
@@ -70,4 +75,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
      * Find notifications ordered by creation date with pagination.
      */
     Page<Notification> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+
+    /**
+     * Find notifications for a user ordered by creation date (newest first).
+     */
+    List<Notification> findByUserOrderByCreatedAtDesc(User user);
 }

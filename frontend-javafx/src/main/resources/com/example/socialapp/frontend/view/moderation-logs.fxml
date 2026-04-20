@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.socialapp.frontend.controller.ModerationLogsController"
+            style="-fx-font-family: 'Segoe UI'; -fx-font-size: 12;">
+
+    <!-- Top ToolBar -->
+    <top>
+        <ToolBar style="-fx-background-color: #2c3e50; -fx-padding: 10;">
+            <Button fx:id="backButton" text="← Back to Admin Panel"
+                    style="-fx-font-size: 12; -fx-padding: 8px 16px;"/>
+            <Separator prefWidth="100"/>
+            <Label fx:id="pageTitle" text="Moderation Logs"
+                   style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: white;"/>
+        </ToolBar>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <VBox spacing="10" style="-fx-padding: 15;">
+            <!-- Table with Logs -->
+            <VBox spacing="5" VBox.vgrow="ALWAYS">
+                <Label text="All Moderation Actions" style="-fx-font-size: 14; -fx-font-weight: bold;"/>
+                
+                <TableView fx:id="logsTable" prefHeight="500" style="-fx-font-size: 11;" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="moderatorNameColumn" text="Moderator Name" prefWidth="200"/>
+                        <TableColumn fx:id="moderatorIdColumn" text="Moderator ID" prefWidth="250"/>
+                        <TableColumn fx:id="postIdColumn" text="Post ID" prefWidth="250"/>
+                        <TableColumn fx:id="actionColumn" text="Action" prefWidth="150"/>
+                        <TableColumn fx:id="timestampColumn" text="Timestamp" prefWidth="200"/>
+                    </columns>
+                </TableView>
+
+                <!-- Empty State -->
+                <Label fx:id="emptyStateLabel" text="No moderation logs found"
+                       style="-fx-font-size: 14; -fx-text-fill: #999; -fx-alignment: center;"
+                       visible="false"/>
+            </VBox>
+        </VBox>
+    </center>
+</BorderPane>

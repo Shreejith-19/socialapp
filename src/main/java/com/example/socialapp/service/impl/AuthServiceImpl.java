@@ -7,6 +7,7 @@ import com.example.socialapp.entity.Role;
 import com.example.socialapp.entity.User;
 import com.example.socialapp.exception.AuthenticationException;
 import com.example.socialapp.exception.ConflictException;
+import com.example.socialapp.repository.BanRepository;
 import com.example.socialapp.repository.RoleRepository;
 import com.example.socialapp.repository.UserRepository;
 import com.example.socialapp.security.JwtTokenProvider;
@@ -31,17 +32,20 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final BanRepository banRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
     public AuthServiceImpl(UserRepository userRepository,
                          RoleRepository roleRepository,
+                         BanRepository banRepository,
                          PasswordEncoder passwordEncoder,
                          AuthenticationManager authenticationManager,
                          JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.banRepository = banRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -129,10 +133,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * Map User entity to UserDTO.
+     * Map User entity to UserDTO, including ban status and details.
      */
     private UserDTO mapToDTO(User user) {
-        return UserDTO.builder()
+        UserDTO.UserDTOBuilder builder = UserDTO.builder()
             .id(user.getId())
             .email(user.getEmail())
             .firstName(user.getFirstName())
@@ -140,9 +144,33 @@ public class AuthServiceImpl implements AuthService {
             .enabled(user.getEnabled())
             .createdAt(user.getCreatedAt())
             .updatedAt(user.getUpdatedAt())
+            .status(user.getStatus().toString())
+            .isBanned(user.isBanned())
             .roles(user.getRoles().stream()
                 .map(role -> role.getName().toString())
-                .collect(java.util.stream.Collectors.toSet()))
-            .build();
+                .collect(java.util.stream.Collectors.toSet()));
+
+        // Fetch and populate ban information if user is banned
+        if (user.isBanned()) {
+            banRepository.findLatestActiveBanByUser(user).ifPresentOrElse(
+                ban -> {
+                    builder.remainingBanDays(ban.getRemainingDays());
+                    builder.remainingBanHours(ban.getRemainingHours());
+                    String message = "You are temporarily banned. " + ban.getFormattedRemainingTime();
+                    if (ban.isPermanent()) {
+                        message = "Your account has been permanently banned.";
+                    }
+                    builder.banMessage(message);
+                    log.info("User {} ban info: {}", user.getId(), message);
+                },
+                () -> {
+                    builder.remainingBanDays(0L);
+                    builder.remainingBanHours(0L);
+                    builder.banMessage("");
+                }
+            );
+        }
+
+        return builder.build();
     }
 }

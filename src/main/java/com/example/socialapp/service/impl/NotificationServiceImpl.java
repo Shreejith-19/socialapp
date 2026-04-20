@@ -3,6 +3,7 @@ package com.example.socialapp.service.impl;
 import com.example.socialapp.dto.NotificationDTO;
 import com.example.socialapp.entity.Notification;
 import com.example.socialapp.entity.User;
+import com.example.socialapp.enums.NotificationType;
 import com.example.socialapp.exception.ResourceNotFoundException;
 import com.example.socialapp.repository.NotificationRepository;
 import com.example.socialapp.repository.UserRepository;
@@ -87,6 +88,23 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public NotificationDTO createNotification(User user, String message, NotificationType type) {
+        log.info("Creating notification for user: {}, type: {}", user.getId(), type);
+
+        Notification notification = Notification.builder()
+            .user(user)
+            .message(message)
+            .type(type)
+            .isRead(false)
+            .build();
+
+        Notification savedNotification = notificationRepository.save(notification);
+        log.info("Notification created: {} for user: {}", savedNotification.getId(), user.getId());
+
+        return mapToDTO(savedNotification);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public NotificationDTO getNotificationById(UUID notificationId) {
         log.debug("Fetching notification: {}", notificationId);
@@ -116,7 +134,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional(readOnly = true)
     public List<NotificationDTO> getUnreadNotifications(UUID userId) {
         log.debug("Fetching unread notifications for user: {}", userId);
-        return notificationRepository.findByUserIdAndIsReadFalse(userId).stream()
+        return notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId).stream()
             .map(this::mapToDTO)
             .collect(Collectors.toList());
     }
@@ -192,6 +210,7 @@ public class NotificationServiceImpl implements NotificationService {
             .id(notification.getId())
             .userId(notification.getUser().getId())
             .message(notification.getMessage())
+            .type(notification.getType())
             .isRead(notification.getIsRead())
             .createdAt(notification.getCreatedAt())
             .build();

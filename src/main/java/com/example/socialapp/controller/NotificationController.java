@@ -7,7 +7,10 @@ import com.example.socialapp.repository.UserRepository;
 import com.example.socialapp.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -57,7 +60,8 @@ public class NotificationController {
      */
     @GetMapping("/page")
     @PreAuthorize("hasAnyRole('USER', 'MODERATOR', 'ADMIN')")
-    public ResponseEntity<Page<NotificationDTO>> getUserNotificationsPaginated(Pageable pageable) {
+    public ResponseEntity<Page<NotificationDTO>> getUserNotificationsPaginated(
+            @PageableDefault(size = 20, page = 0, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("Fetching notifications with pagination for current user");
 
         String userEmail = SecurityUtil.getCurrentUserEmail();
@@ -93,7 +97,8 @@ public class NotificationController {
      */
     @GetMapping("/unread/page")
     @PreAuthorize("hasAnyRole('USER', 'MODERATOR', 'ADMIN')")
-    public ResponseEntity<Page<NotificationDTO>> getUnreadNotificationsPaginated(Pageable pageable) {
+    public ResponseEntity<Page<NotificationDTO>> getUnreadNotificationsPaginated(
+            @PageableDefault(size = 20, page = 0, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("Fetching unread notifications with pagination for current user");
 
         String userEmail = SecurityUtil.getCurrentUserEmail();

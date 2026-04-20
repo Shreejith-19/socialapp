@@ -62,13 +62,15 @@ public interface ModerationService {
      * - APPROVED: Set post to PUBLISHED and remove from queue
      * - REMOVED: Set post to REMOVED and apply penalty to author
      * - ESCALATED: Keep in queue for senior review
+     * Logs the moderation action for audit trail.
      *
      * @param decisionType the decision type
      * @param postId the post ID
      * @param reason the reason for decision
+     * @param moderator the moderator making the decision
      * @return the created ModerationDecision
      */
-    ModerationDecision makeDecision(DecisionType decisionType, java.util.UUID postId, String reason);
+    ModerationDecision makeDecision(DecisionType decisionType, java.util.UUID postId, String reason, com.example.socialapp.entity.User moderator);
 
     /**
      * Get a moderation decision by post ID.

@@ -1,5 +1,6 @@
 package com.example.socialapp.dto;
 
+import com.example.socialapp.enums.NotificationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class NotificationDTO {
     private UUID id;
     private UUID userId;
     private String message;
+    private NotificationType type;
     private Boolean isRead;
     private LocalDateTime createdAt;
 

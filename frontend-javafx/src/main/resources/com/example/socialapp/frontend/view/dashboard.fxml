@@ -51,6 +51,10 @@
                 
                 <!-- User Info and Logout -->
                 <Separator styleClass="navbar-separator" />
+                <Button fx:id="notificationButton" 
+                        text="🔔"
+                        styleClass="btn-navbar-icon"
+                        style="-fx-font-size: 16;" />
                 <Label fx:id="welcomeLabel" 
                        text="Welcome!"
                        styleClass="navbar-user" />

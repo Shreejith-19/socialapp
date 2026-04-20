@@ -35,6 +35,7 @@ public class DashboardController extends BaseController implements Initializable
     @FXML private Button adminButton;
     @FXML private Button appealButton;
     @FXML private Button myPostsStatusButton;
+    @FXML private Button notificationButton;
     @FXML private Button refreshButton;
     @FXML private Spinner<Integer> pageSpinner;
 
@@ -47,6 +48,7 @@ public class DashboardController extends BaseController implements Initializable
         setupPostCreation();
         setupPagination();
         setupLogout();
+        setupNotificationButton();
         setupMyPostsStatusButton();
         setupModerationButton();
         setupAdminButton();
@@ -395,6 +397,26 @@ public class DashboardController extends BaseController implements Initializable
             replaceScene("login.fxml", "Social App - Login", stage);
         } catch (Exception e) {
             log.error("Error navigating to login", e);
+        }
+    }
+
+    /**
+     * Setup notification button.
+     */
+    private void setupNotificationButton() {
+        notificationButton.setOnAction(event -> navigateToNotifications());
+    }
+
+    /**
+     * Navigate to notifications page.
+     */
+    private void navigateToNotifications() {
+        try {
+            Stage stage = (Stage) notificationButton.getScene().getWindow();
+            replaceScene("notifications.fxml", "My Notifications", stage);
+        } catch (Exception e) {
+            log.error("Error navigating to notifications", e);
+            showAlert("Error", "Could not navigate to notifications");
         }
     }
 

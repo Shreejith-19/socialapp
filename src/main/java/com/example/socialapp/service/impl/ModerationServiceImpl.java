@@ -3,8 +3,10 @@ package com.example.socialapp.service.impl;
 import com.example.socialapp.entity.Ban;
 import com.example.socialapp.entity.ModerationDecision;
 import com.example.socialapp.entity.Post;
+import com.example.socialapp.entity.User;
 import com.example.socialapp.enums.BanType;
 import com.example.socialapp.enums.DecisionType;
+import com.example.socialapp.enums.NotificationType;
 import com.example.socialapp.enums.PostStatus;
 import com.example.socialapp.enums.UserStatus;
 import com.example.socialapp.exception.ResourceNotFoundException;
@@ -14,6 +16,8 @@ import com.example.socialapp.repository.ModerationDecisionRepository;
 import com.example.socialapp.repository.PostRepository;
 import com.example.socialapp.repository.UserRepository;
 import com.example.socialapp.service.ModerationService;
+import com.example.socialapp.service.NotificationService;
+import com.example.socialapp.service.ModerationLogService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +43,8 @@ public class ModerationServiceImpl implements ModerationService {
     private final ModerationDecisionRepository moderationDecisionRepository;
     private final BanRepository banRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
+    private final ModerationLogService moderationLogService;
     
     /**
      * Banned keywords that indicate inappropriate content.
@@ -62,12 +68,16 @@ public class ModerationServiceImpl implements ModerationService {
 
     public ModerationServiceImpl(ModerationQueue moderationQueue, PostRepository postRepository,
                                 ModerationDecisionRepository moderationDecisionRepository,
-                                BanRepository banRepository, UserRepository userRepository) {
+                                BanRepository banRepository, UserRepository userRepository,
+                                NotificationService notificationService,
+                                ModerationLogService moderationLogService) {
         this.moderationQueue = moderationQueue;
         this.postRepository = postRepository;
         this.moderationDecisionRepository = moderationDecisionRepository;
         this.banRepository = banRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
+        this.moderationLogService = moderationLogService;
     }
 
     @Override
@@ -118,6 +128,15 @@ public class ModerationServiceImpl implements ModerationService {
         log.info("Flagging post: {} for moderation", post.getId());
         post.markFlagged();
         postRepository.save(post);
+        
+        // Notify author that their post has been flagged
+        if (post.getAuthor() != null) {
+            notificationService.createNotification(post.getAuthor(),
+                "Your post has been flagged for moderation review and is currently hidden.",
+                NotificationType.POST_FLAGGED);
+            log.info("POST_FLAGGED notification sent to post author: {}", post.getAuthor().getId());
+        }
+        
         log.info("Post flagged successfully: {}", post.getId());
     }
 
@@ -164,6 +183,13 @@ public class ModerationServiceImpl implements ModerationService {
         post.publish();
         postRepository.save(post);
         
+        // Notify author that post was approved and is now published
+        User author = post.getAuthor();
+        notificationService.createNotification(author,
+            "Your post has been approved by moderators and is now published.",
+            NotificationType.POST_APPROVED);
+        log.info("POST_APPROVED notification sent to post author: {}", author.getId());
+        
         log.info("Post approved successfully: {}", post.getId());
     }
 
@@ -187,7 +213,7 @@ public class ModerationServiceImpl implements ModerationService {
     }
 
     @Override
-    public ModerationDecision makeDecision(DecisionType decisionType, UUID postId, String reason) {
+    public ModerationDecision makeDecision(DecisionType decisionType, UUID postId, String reason, User moderator) {
         log.info("Making moderation decision for post: {}, Decision: {}", postId, decisionType);
 
         // Load post
@@ -210,6 +236,20 @@ public class ModerationServiceImpl implements ModerationService {
                 // Set to PUBLISHED
                 post.publish();
                 postRepository.save(post);
+                
+                // Log the moderation action
+                if (moderator != null) {
+                    moderationLogService.logAction(moderator, postId, DecisionType.APPROVED);
+                }
+                
+                // Notify author that post was approved
+                if (post.getAuthor() != null) {
+                    notificationService.createNotification(post.getAuthor(),
+                        "Your flagged post has been approved by moderators and is now published.",
+                        NotificationType.POST_APPROVED);
+                    log.info("POST_APPROVED notification sent to post author: {}", post.getAuthor().getId());
+                }
+                
                 log.info("Post published: {}", postId);
                 break;
 
@@ -220,6 +260,11 @@ public class ModerationServiceImpl implements ModerationService {
                 // Mark as removed
                 post.remove();
                 postRepository.save(post);
+                
+                // Log the moderation action
+                if (moderator != null) {
+                    moderationLogService.logAction(moderator, postId, DecisionType.REMOVED);
+                }
                 
                 // Apply penalty to author
                 if (post.getAuthor() != null) {
@@ -235,8 +280,15 @@ public class ModerationServiceImpl implements ModerationService {
                         .build();
                     banRepository.save(tempBan);
                     
-                    userRepository.save(post.getAuthor());
-                    log.warn("User temporarily banned due to post removal: {}. Ban expiry: 7 days", post.getAuthor().getId());
+                    User author = post.getAuthor();
+                    userRepository.save(author);
+                    log.warn("User temporarily banned due to post removal: {}. Ban expiry: 7 days", author.getId());
+                    
+                    // Notify user about post removal and temp ban
+                    notificationService.createNotification(author,
+                        "Your post has been removed for policy violations. You are temporarily banned for 7 days.",
+                        NotificationType.TEMP_BAN);
+                    log.info("TEMP_BAN notification sent to user: {}", author.getId());
                 }
                 log.info("Post removed: {}", postId);
                 break;

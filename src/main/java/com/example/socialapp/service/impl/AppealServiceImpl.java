@@ -7,6 +7,7 @@ import com.example.socialapp.entity.Post;
 import com.example.socialapp.entity.User;
 import com.example.socialapp.enums.AppealStatus;
 import com.example.socialapp.enums.AppealType;
+import com.example.socialapp.enums.NotificationType;
 import com.example.socialapp.enums.PostStatus;
 import com.example.socialapp.enums.UserStatus;
 import com.example.socialapp.exception.ConflictException;
@@ -16,6 +17,7 @@ import com.example.socialapp.repository.BanRepository;
 import com.example.socialapp.repository.PostRepository;
 import com.example.socialapp.repository.UserRepository;
 import com.example.socialapp.service.AppealService;
+import com.example.socialapp.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,13 +42,16 @@ public class AppealServiceImpl implements AppealService {
     private final BanRepository banRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public AppealServiceImpl(AppealRepository appealRepository, BanRepository banRepository,
-                           PostRepository postRepository, UserRepository userRepository) {
+                           PostRepository postRepository, UserRepository userRepository,
+                           NotificationService notificationService) {
         this.appealRepository = appealRepository;
         this.banRepository = banRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -218,20 +223,67 @@ public class AppealServiceImpl implements AppealService {
             if (appeal.getAppealType() == AppealType.BAN) {
                 // Lift the ban - set user status back to ACTIVE
                 Ban ban = appeal.getBan();
-                User user = ban.getUser();
+                UUID userId = ban.getUser().getId();
+                
+                // Step 1: Clear the appeal's ban reference (break foreign key constraint)
+                appeal.setBan(null);
+                appealRepository.save(appeal);
+                log.info("Appeal ban reference cleared for appeal: {}", appealId);
+                
+                // Step 2: Delete the ban record from database
+                banRepository.delete(ban);
+                banRepository.flush();  // Force deletion to complete
+                log.info("Ban record deleted for user: {}", userId);
+                
+                // Step 3: Reload user from database to get fresh instance
+                User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
+                
+                // Step 4: Set user status back to ACTIVE
                 user.setStatus(UserStatus.ACTIVE);
-                userRepository.save(user);
-                log.info("Ban lifted for user: {}. Status set to ACTIVE", user.getId());
+                User savedUser = userRepository.save(user);
+                log.info("Ban lifted for user: {}. User status set to ACTIVE. Ban deleted from database.", userId);
+                
+                // Step 5: Send notification to user about appeal approval
+                notificationService.createNotification(user, 
+                    "Your appeal has been approved! Your ban has been lifted and you can post again.", 
+                    NotificationType.APPEAL_APPROVED);
+                log.info("Appeal approval notification sent to user: {}", userId);
+                
+                // Verify the changes persisted
+                log.debug("User {} status after save: {}", userId, savedUser.getStatus());
             } else if (appeal.getAppealType() == AppealType.POST) {
                 // Restore the post - set status back to PUBLISHED
                 Post post = appeal.getPost();
                 post.setStatus(PostStatus.PUBLISHED);
                 postRepository.save(post);
                 log.info("Post restored: {} to PUBLISHED status", post.getId());
+                
+                // Send notification to post author
+                User author = post.getAuthor();
+                notificationService.createNotification(author,
+                    "Your appeal has been approved! Your post has been restored.",
+                    NotificationType.POST_APPROVED);
+                log.info("Appeal approval notification sent to post author: {}", author.getId());
             }
         } else {
             log.info("Appeal REJECTED: {}", appealId);
             appeal.setStatus(AppealStatus.REJECTED);
+            
+            // Send rejection notification to user
+            if (appeal.getAppealType() == AppealType.BAN) {
+                User user = appeal.getBan().getUser();
+                notificationService.createNotification(user,
+                    "Your ban appeal has been rejected. " + decision,
+                    NotificationType.APPEAL_REJECTED);
+                log.info("Appeal rejection notification sent to user: {}", user.getId());
+            } else if (appeal.getAppealType() == AppealType.POST) {
+                User author = appeal.getPost().getAuthor();
+                notificationService.createNotification(author,
+                    "Your post appeal has been rejected. " + decision,
+                    NotificationType.APPEAL_REJECTED);
+                log.info("Appeal rejection notification sent to post author: {}", author.getId());
+            }
             // Ban remains active or post remains removed
         }
 

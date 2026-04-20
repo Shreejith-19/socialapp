@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.socialapp.frontend.controller.NotificationController"
+            styleClass="notifications-root"
+            stylesheets="@styles.css">
+    
+    <!-- ============================================================================
+         TOP NAVBAR
+         ============================================================================ -->
+    <top>
+        <HBox styleClass="navbar" spacing="20" alignment="CENTER_LEFT">
+            <padding>
+                <Insets top="15" right="30" bottom="15" left="30" />
+            </padding>
+            
+            <!-- Back Button -->
+            <Button fx:id="backButton"
+                    text="← Back"
+                    styleClass="btn-navbar" />
+            
+            <!-- Title -->
+            <Label fx:id="pageTitle"
+                   text="Notifications"
+                   styleClass="navbar-title" />
+            
+            <!-- Spacing -->
+            <Region HBox.hgrow="ALWAYS" />
+            
+            <!-- Action Buttons -->
+            <Button fx:id="markAllAsReadButton"
+                    text="Mark All as Read"
+                    styleClass="btn-navbar" />
+        </HBox>
+    </top>
+    
+    <!-- ============================================================================
+         MAIN CONTENT - Notifications List
+         ============================================================================ -->
+    <center>
+        <VBox alignment="TOP_CENTER" spacing="0" styleClass="notifications-container">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20" />
+            </padding>
+            
+            <!-- Notifications List with Scroll -->
+            <ScrollPane fx:id="notificationsScroll"
+                        styleClass="scroll-pane"
+                        fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        vbarPolicy="AS_NEEDED"
+                        VBox.vgrow="ALWAYS">
+                <VBox fx:id="notificationsList"
+                      spacing="10"
+                      styleClass="notifications-list"
+                      style="-fx-padding: 0;">
+                    <padding>
+                        <Insets top="0" right="10" bottom="0" left="0" />
+                    </padding>
+                </VBox>
+            </ScrollPane>
+            
+            <!-- Pagination -->
+            <HBox alignment="CENTER" spacing="10" style="-fx-padding: 20 0 0 0;">
+                <Label text="Page:" style="-fx-font-size: 12;" />
+                <Spinner fx:id="pageSpinner"
+                         prefWidth="80"
+                         style="-fx-font-size: 11;" />
+            </HBox>
+        </VBox>
+    </center>
+</BorderPane>

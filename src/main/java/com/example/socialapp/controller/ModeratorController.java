@@ -2,10 +2,12 @@ package com.example.socialapp.controller;
 
 import com.example.socialapp.dto.PostDTO;
 import com.example.socialapp.entity.ModerationDecision;
+import com.example.socialapp.entity.User;
 import com.example.socialapp.enums.DecisionType;
 import com.example.socialapp.enums.PostStatus;
 import com.example.socialapp.exception.ResourceNotFoundException;
 import com.example.socialapp.repository.PostRepository;
+import com.example.socialapp.repository.UserRepository;
 import com.example.socialapp.service.ModerationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -13,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -41,10 +45,12 @@ public class ModeratorController {
 
     private final ModerationService moderationService;
     private final PostRepository postRepository;
+    private final UserRepository userRepository;
 
-    public ModeratorController(ModerationService moderationService, PostRepository postRepository) {
+    public ModeratorController(ModerationService moderationService, PostRepository postRepository, UserRepository userRepository) {
         this.moderationService = moderationService;
         this.postRepository = postRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -82,11 +88,25 @@ public class ModeratorController {
         postRepository.findById(request.getPostId())
             .orElseThrow(() -> new ResourceNotFoundException("Post", "id", request.getPostId().toString()));
 
+        // Get current authenticated user (moderator)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication != null ? authentication.getName() : null;
+        User moderator = null;
+        
+        if (username != null) {
+            moderator = userRepository.findByEmail(username).orElse(null);
+        }
+        
+        if (moderator == null) {
+            log.warn("Could not identify moderator for decision on post: {}", request.getPostId());
+        }
+
         // Make decision
         ModerationDecision decision = moderationService.makeDecision(
             request.getDecisionType(),
             request.getPostId(),
-            request.getReason()
+            request.getReason(),
+            moderator
         );
 
         ModerationDecisionResponse response = ModerationDecisionResponse.builder()

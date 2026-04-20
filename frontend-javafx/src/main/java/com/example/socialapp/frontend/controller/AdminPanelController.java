@@ -46,6 +46,7 @@ public class AdminPanelController extends BaseController implements Initializabl
 
     @FXML private Label titleLabel;
     @FXML private Button backButton;
+    @FXML private Button viewLogsButton;
     @FXML private TabPane adminTabPane;
 
     private int usersPage = 0;
@@ -66,6 +67,7 @@ public class AdminPanelController extends BaseController implements Initializabl
         setupUI();
         setupUserManagementTab();
         setupAppealReviewTab();
+        setupLogsButton();
         setupBackButton();
         loadUsers();
         loadAppeals();
@@ -75,7 +77,16 @@ public class AdminPanelController extends BaseController implements Initializabl
      * Check if current user is an admin.
      */
     private boolean isUserAdmin() {
-        return RoleManager.isAdmin(sessionManager.getCurrentUser());
+        Optional<UserDTO> user = sessionManager.getCurrentUser();
+        boolean isAdmin = RoleManager.isAdmin(user);
+        
+        if (!isAdmin) {
+            log.warn("User does not have ADMIN role. Current user: {}, Roles: {}", 
+                user.map(UserDTO::getEmail).orElse("Unknown"), 
+                user.map(UserDTO::getRoles).orElse(java.util.Set.of()));
+        }
+        
+        return isAdmin;
     }
 
     /**
@@ -402,6 +413,26 @@ public class AdminPanelController extends BaseController implements Initializabl
      */
     private void setupBackButton() {
         backButton.setOnAction(event -> navigateBack());
+    }
+
+    /**
+     * Setup logs button.
+     */
+    private void setupLogsButton() {
+        viewLogsButton.setOnAction(event -> navigateToLogs());
+    }
+
+    /**
+     * Navigate to moderation logs view.
+     */
+    private void navigateToLogs() {
+        try {
+            Stage stage = (Stage) viewLogsButton.getScene().getWindow();
+            replaceScene("moderation-logs.fxml", "Moderation Logs", stage);
+        } catch (Exception e) {
+            log.error("Error navigating to moderation logs", e);
+            showAlert("Error", "Failed to navigate to moderation logs");
+        }
     }
 
     /**

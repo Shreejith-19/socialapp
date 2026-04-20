@@ -1,8 +1,10 @@
 package com.example.socialapp.service;
 
 import com.example.socialapp.dto.NotificationDTO;
+import com.example.socialapp.enums.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.example.socialapp.entity.User;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,6 +52,16 @@ public interface NotificationService {
      * @return the created Notification
      */
     NotificationDTO sendNotification(UUID userId, String message);
+
+    /**
+     * Create notification for a user with message and type.
+     *
+     * @param user the user to notify
+     * @param message the notification message
+     * @param type the notification type
+     * @return the created Notification
+     */
+    NotificationDTO createNotification(User user, String message, NotificationType type);
 
     /**
      * Get notification by ID.

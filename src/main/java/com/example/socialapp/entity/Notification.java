@@ -1,5 +1,6 @@
 package com.example.socialapp.entity;
 
+import com.example.socialapp.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "notifications", indexes = {
     @Index(name = "idx_user_id", columnList = "user_id"),
+    @Index(name = "idx_type", columnList = "type"),
     @Index(name = "idx_is_read", columnList = "is_read"),
     @Index(name = "idx_created_at", columnList = "created_at")
 })
@@ -35,6 +37,10 @@ public class Notification {
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String message;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationType type;
 
     @Column(nullable = false)
     @Builder.Default
@@ -56,6 +62,13 @@ public class Notification {
      */
     public void markAsUnread() {
         this.isRead = false;
+    }
+
+    /**
+     * Check if notification is unread.
+     */
+    public boolean isUnread() {
+        return !isRead;
     }
 
     /**
